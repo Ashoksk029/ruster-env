@@ -55,9 +55,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Cargo.toml
-          git commit -m "chore: bump version to ${{ steps.calc_version.outputs.version }} [skip ci]"
-          git push
+          
+          # Check if Cargo.toml was actually modified
+          if git diff --quiet Cargo.toml; then
+            echo "No changes to Cargo.toml, skipping commit."
+          else
+            git add Cargo.toml
+            git commit -m "chore: bump version to ${{ steps.calc_version.outputs.version }} [skip ci]"
+            git push
+          fi
 
       # 4. Build the Binary
       - name: Setup Rust

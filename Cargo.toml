@@ -1,0 +1,27 @@
+[package]
+name = "ruster-env"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "Fast .env loader for Windows 🚀"
+repository = "https://github.com/YourName/ruster-env"
+license = "MIT"
+readme = "README.md"
+keywords = ["env", "windows", "cli", "dotenv", "dev-tools"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# 'cargo' feature allows #[command(version)] to pull directly from this file
+clap = { version = "4.5", features = ["derive", "cargo"] }
+anyhow = "1.0"
+
+[profile.release]
+opt-level = "z"     # Optimize for smallest binary size (fastest startup)
+lto = true          # Link Time Optimization
+codegen-units = 1   # Maximize optimization
+strip = true        # Remove debug symbols
+panic = "abort"     # Remove unwind logic
+
+[[bin]]
+name = "ruster-core"
+path = "src/main.rs"

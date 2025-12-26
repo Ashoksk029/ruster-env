@@ -1,0 +1,92 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+    # Prevent infinite loops when the action pushes the version bump back
+    paths-ignore:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: write # Needed to create tags and releases
+
+jobs:
+  release:
+    name: Release
+    runs-on: windows-latest
+    
+    outputs:
+      new_version: ${{ steps.calc_version.outputs.version }}
+      version_changed: ${{ steps.calc_version.outputs.changed }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important: Fetch all history for commit analysis
+
+      # 1. Calculate the Next Version based on commits
+      - name: Calculate Next Version
+        id: calc_version
+        uses: PaulHatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "(BREAKING CHANGE|feat!)"
+          minor_pattern: "feat:"
+          version_format: "${major}.${minor}.${patch}"
+
+      # 2. Update Cargo.toml (Only if version changed)
+      - name: Bump Cargo.toml
+        if: steps.calc_version.outputs.changed == 'true'
+        shell: bash
+        run: |
+          # Use sed to replace the version line (simple and effective)
+          sed -i 's/^version = ".*"/version = "${{ steps.calc_version.outputs.version }}"/' Cargo.toml
+          
+          # Verify it worked
+          cat Cargo.toml | grep version
+
+      # 3. Commit and Push the Version Bump (So your repo stays in sync)
+      - name: Push Version Bump
+        if: steps.calc_version.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml
+          git commit -m "chore: bump version to ${{ steps.calc_version.outputs.version }} [skip ci]"
+          git push
+
+      # 4. Build the Binary
+      - name: Setup Rust
+        if: steps.calc_version.outputs.changed == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Release
+        if: steps.calc_version.outputs.changed == 'true'
+        run: cargo build --release
+
+      # 5. Generate Wrapper (Your Shadow Binary Logic)
+      - name: Generate Wrapper
+        if: steps.calc_version.outputs.changed == 'true'
+        run: |
+          cd target/release
+          .\ruster-core.exe init --shell cmd
+
+      # 6. Package
+      - name: Zip Artifacts
+        if: steps.calc_version.outputs.changed == 'true'
+        run: |
+          cd target/release
+          7z a ../../ruster-env-windows-x64.zip ruster-core.exe ruster-env.cmd
+
+      # 7. Create GitHub Release
+      - name: Publish Release
+        if: steps.calc_version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.calc_version.outputs.version }}
+          files: ruster-env-windows-x64.zip
+          generate_release_notes: true

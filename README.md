@@ -1,4 +1,6 @@
-# ruster-env v0.1.0
+# ruster-env
+
+[![GitHub release](https://img.shields.io/github/v/release/Ashoksk029/ruster-env?color=orange)](https://github.com/Ashoksk029/ruster-env/releases)
 
 > **Bend the environment to your will.**
 

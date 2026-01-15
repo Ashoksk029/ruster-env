@@ -76,7 +76,7 @@ fn test_unload_cmd() {
        .arg("--shell").arg("cmd")
        .assert()
        .success()
-       .stdout(predicate::str::contains("[Ruster] No active variables found"));
+       .stdout(predicate::str::contains("[Ruster-Env] No active variables found"));
 }
 
 #[test]

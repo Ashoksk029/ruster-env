@@ -118,7 +118,7 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
     
-    // Helper to avoid repeating this logic in every match arm
+    // Detect shell once at startup to avoid repeated checks
     let default_shell = handlers::detect_shell();
 
     match &cli.command {

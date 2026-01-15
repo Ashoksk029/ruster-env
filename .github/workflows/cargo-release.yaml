@@ -54,6 +54,7 @@ jobs:
         shell: bash
         run: |
           sed -i 's/^version = ".*"/version = "${{ steps.calc_version.outputs.version }}"/' Cargo.toml
+          cargo check
           cat Cargo.toml | grep version
 
       # 3. Commit and Push the Version Bump
@@ -68,6 +69,7 @@ jobs:
             echo "No changes to Cargo.toml, skipping commit."
           else
             git add Cargo.toml
+            git add Cargo.lock
             git commit -m "chore: bump version to ${{ steps.calc_version.outputs.version }} [skip ci]"
             git push
           fi

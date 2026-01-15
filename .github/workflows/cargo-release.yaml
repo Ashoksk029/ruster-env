@@ -8,6 +8,7 @@ on:
     paths-ignore:
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'README.md'
 
 permissions:
   contents: write # Needed to create tags and releases
@@ -44,6 +45,7 @@ jobs:
           tag_prefix: "v"
           major_pattern: "(BREAKING CHANGE|feat!)"
           minor_pattern: "feat:"
+          patch_pattern: "(fix|perf)"
           version_format: "${major}.${minor}.${patch}"
 
       # 2. Update Cargo.toml (Only if version changed)

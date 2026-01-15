@@ -4,11 +4,22 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+/// Represents a parsed environment variable key-value pair.
 pub struct EnvVar {
     pub key: String,
     pub value: String,
 }
 
+/// Parses a .env file into a list of resolved environment variables.
+///
+/// This function reads the file line-by-line and performs the following transformations:
+/// 1. Skips comments (`#`) and empty lines.
+/// 2. Removes `export` prefixes if present.
+/// 3. Strips surrounding quotes from values.
+/// 4. Interpolates variables (e.g., `${HOST}`) using local or system values.
+///
+/// # Arguments
+/// * `path` - The file path to the .env file.
 pub fn parse_env_file(path: &str) -> Result<Vec<EnvVar>> {
     let file_path = Path::new(path);
     
@@ -44,14 +55,14 @@ pub fn parse_env_file(path: &str) -> Result<Vec<EnvVar>> {
             let key = key_part.trim().to_string();
             let raw_value = value_part.trim();
 
-            // 1. Remove quotes if present (e.g., "value" -> value)
+            // Remove quotes if present (e.g., "value" -> value)
             let clean_value = strip_quotes(raw_value);
 
-            // 2. Interpolate (Resolve ${VAR} placeholders)
+            // Interpolate (Resolve ${VAR} placeholders)
             // We pass 'var_map' so it can find variables defined in previous lines
             let resolved_value = interpolate(&clean_value, &var_map);
 
-            // 3. Store
+            // Store the vars
             var_map.insert(key.clone(), resolved_value.clone());
             vars.push(EnvVar {
                 key,
@@ -99,16 +110,15 @@ fn interpolate(value: &str, context: &HashMap<String, String>) -> String {
                 }
 
                 if closed {
-                    // RESOLUTION LOGIC:
-                    // 1. Check variables defined earlier in this file
+                    // Check variables defined earlier in this file
                     if let Some(local_val) = context.get(&var_name) {
                         result.push_str(local_val);
                     } 
-                    // 2. Check System Environment variables (e.g., ${PATH})
+                    // Check System Environment variables (e.g., ${PATH})
                     else if let Ok(sys_val) = std::env::var(&var_name) {
                         result.push_str(&sys_val);
                     } 
-                    // 3. Not found? Keep literal "${VAR}" (or leave empty? Standard is usually keep literal or empty)
+                    // Not found? Keep literal "${VAR}" (or leave empty? Standard is usually keep literal or empty)
                     // Let's keep the placeholder to indicate error, or you can use empty string.
                     else {
                         result.push_str(&format!("${{{}}}", var_name));
